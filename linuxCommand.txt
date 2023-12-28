@@ -1,0 +1,174 @@
+
+
+# Function to display the manual page
+display_manual() {
+    echo "internsctl(1)                           User Commands                           internsctl(1)"
+    echo ""
+    echo "NAME"
+    echo "       internsctl - Custom Linux command for various operations"
+    echo ""
+    echo "SYNOPSIS"
+    echo "       internsctl [OPTIONS] COMMAND [ARGS...]"
+    echo ""
+    echo "DESCRIPTION"
+    echo "       internsctl is a custom Linux command that provides various operations."
+    echo ""
+    echo "OPTIONS"
+    echo "       --help         Display help for internsctl"
+    echo "       --version      Display version information"
+    echo ""
+    echo "COMMANDS"
+    echo "       cpu            Get CPU information"
+    echo "       memory         Get memory information"
+    echo "       user           User operations"
+    echo "       file           File operations"
+}
+
+# Function to display help for internsctl
+display_help() {
+    echo "Usage: internsctl [OPTIONS] COMMAND [ARGS...]"
+    echo ""
+    echo "OPTIONS:"
+    echo "  --help         Display help for internsctl"
+    echo "  --version      Display version information"
+    echo ""
+    echo "COMMANDS:"
+    echo "  cpu getinfo    Get CPU information"
+    echo "  memory getinfo Get memory information"
+    echo "  user create    Create a new user"
+    echo "  user list      List all regular users"
+    echo "  user list --sudo-only List all users with sudo permissions"
+    echo "  file getinfo   Get information about a file"
+}
+
+# Function to display version of internsctl
+display_version() {
+    echo "internsctl v0.1.0"
+}
+
+# Function to get CPU information
+get_cpu_info() {
+    lscpu
+}
+
+# Function to get memory information
+get_memory_info() {
+    free
+}
+
+# Function to create a new user
+create_user() {
+    if [ -z "$1" ]; then
+        echo "Error: Missing username. Usage: internsctl user create <username>"
+    else
+        sudo useradd -m "$1"
+        sudo passwd "$1"
+    fi
+}
+
+# Function to list users
+list_users() {
+    if [ "$1" = "--sudo-only" ]; then
+        getent passwd | cut -d: -f1,3,4 | awk -F: '$2 >= 1000 && $2 <= 60000 {print $1}' | xargs -n 1 id -nG | grep -w sudo | cut -d' ' -f1
+    else
+        getent passwd | cut -d: -f1
+    fi
+}
+
+# Function to get file information
+get_file_info() {
+    local file="$2"
+    local size=$(stat --printf="%s" "$file")
+    local permissions=$(stat --printf="%A" "$file")
+    local owner=$(stat --printf="%U" "$file")
+    local last_modified=$(stat --printf="%y" "$file")
+
+    if [ "$1" = "--size" -o "$1" = "-s" ]; then
+        echo "$size"
+    elif [ "$1" = "--permissions" -o "$1" = "-p" ]; then
+        echo "$permissions"
+    elif [ "$1" = "--owner" -o "$1" = "-o" ]; then
+        echo "$owner"
+    elif [ "$1" = "--last-modified" -o "$1" = "-m" ]; then
+        echo "$last_modified"
+    else
+        echo "Error: Invalid option. Use --size, --permissions, --owner, or --last-modified."
+    fi
+}
+
+# Main script
+case "$1" in
+    "cpu")
+        case "$2" in
+            "getinfo")
+                get_cpu_info
+                ;;
+            *)
+                display_help
+                ;;
+        esac
+        ;;
+    "memory")
+        case "$2" in
+            "getinfo")
+                get_memory_info
+                ;;
+            *)
+                display_help
+                ;;
+        esac
+        ;;
+    "user")
+        case "$2" in
+            "create")
+                create_user "$3"
+                ;;
+            "list")
+                list_users "$3"
+                ;;
+            *)
+                display_help
+                ;;
+        esac
+        ;;
+    "file")
+        case "$2" in
+            "getinfo")
+                if [ -z "$3" ]; then
+                    echo "Error: Missing file name. Usage: internsctl file getinfo <file-name>"
+                else
+                    get_file_info "$4" "$3"
+                fi
+                ;;
+            *)
+                display_help
+                ;;
+        esac
+        ;;
+    "--help")
+        display_help
+        ;;
+    "--version")
+        display_version
+        ;;
+    *)
+        display_help
+        ;;
+esac
+
+===========================================================
+After saving Scripts then run specified commands 
+===================================================
+./internsctl --help
+./internsctl --version
+./internsctl cpu getinfo
+./internsctl memory getinfo
+./internsctl user create john_doe
+./internsctl user list
+./internsctl user list --sudo-only
+./internsctl file getinfo hello.txt
+./internsctl file getinfo --size hello.txt
+./internsctl file getinfo --permissions hello.txt
+./internsctl file getinfo --owner hello.txt
+./internsctl file getinfo --last-modified hello.txt
+
